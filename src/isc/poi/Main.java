@@ -1,5 +1,6 @@
 package isc.poi;
 
+import com.intersys.jdbc.CacheListBuilder;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.usermodel.Row;
@@ -16,9 +17,59 @@ public class Main {
 
     public static void main(String[] args) {
         try {
-            Test1();
+            getSheet("D:\\Cache\\POI\\Книга1.xlsx", 0);
+            //isc.poi.Test.Test();
+
+            //Test1();
         } catch (Exception ex) {
         }
+    }
+
+    /// Iterators - do not skip empty rows?
+    /// https://stackoverflow.com/questions/30519539/apache-poi-skips-rows-that-have-never-been-updated
+    public static String[] getSheet(String filename, int sheetNumber) throws Exception {
+
+        String value = null;
+        ArrayList<String> rowList = new ArrayList<String>();
+
+        File file = new File(filename);
+        Workbook workbook = WorkbookFactory.create(file);
+
+        Sheet sheet = workbook.getSheetAt(sheetNumber);
+        Iterator rows = sheet.rowIterator();
+
+        while (rows.hasNext()) {
+            CacheListBuilder list = new CacheListBuilder("UTF8");
+            Row row = (Row) rows.next();
+
+            for (int i = 0; i < row.getLastCellNum(); i++) {
+                Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                if (cell.getCellTypeEnum() == FORMULA) {
+                    switch (cell.getCachedFormulaResultTypeEnum()) {
+                        case NUMERIC:
+                            value = String.valueOf(cell.getNumericCellValue());
+                            break;
+                        case STRING:
+                            value = cell.getRichStringCellValue().getString();
+                            break;
+                    }
+                } else {
+                    value = cell.toString();
+                }
+                list.set(value);
+                ///System.out.print("'" + cell.toString() + "'"+" ");
+            }
+            rowList.add(new String(list.getData()));
+        }
+
+        String[] result = rowList.toArray(new String[rowList.size()]);
+        return result;
+    }
+
+    public static int getSheetCount(String filename) throws Exception {
+        File file = new File(filename);
+        Workbook workbook = WorkbookFactory.create(file);
+        return workbook.getNumberOfSheets();
     }
 
     public static String[] Test1 () throws Exception{
@@ -74,5 +125,11 @@ public class Main {
         File file = new File("D:\\Cache\\POI\\Книга1.xlsx");
 
         return file;
+    }
+    public static Object Test(Object in)
+    {
+        String[] ret = new String[1];
+        ret[0] = "144";
+        return ret;
     }
 }
