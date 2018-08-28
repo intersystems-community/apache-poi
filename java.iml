@@ -13,5 +13,8 @@
     <orderEntry type="library" name="poi-scratchpad-3.17" level="project" />
     <orderEntry type="library" name="poi-excelant-3.17" level="project" />
     <orderEntry type="library" name="commons-codec-1.10" level="project" />
+    <orderEntry type="library" name="JDK18" level="project" />
+    <orderEntry type="library" name="cache-gateway-2.0.0" level="project" />
+    <orderEntry type="library" name="cache-db-2.0.0" level="project" />
   </component>
 </module>

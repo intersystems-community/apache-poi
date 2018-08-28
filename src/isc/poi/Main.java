@@ -1,10 +1,12 @@
 package isc.poi;
 
 import com.intersys.jdbc.CacheListBuilder;
-import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.usermodel.Row;
 
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.io.File;
@@ -13,29 +15,80 @@ import static org.apache.poi.ss.usermodel.CellType.*;
 
 public class Main {
 
-    public static String ROWSEPARATOR = "\t\t\t";
+    public static String[] getBook(String filename) {
+        File file = new File(filename);
 
-    public static void main(String[] args) {
+        Workbook workbook = null;
+        String[] result = new String[1];
+        ArrayList<String> bookList = new ArrayList<String>();
+        CacheListBuilder bookInfo = new CacheListBuilder("UTF8");
+
         try {
-            getSheet("D:\\Cache\\POI\\Книга1.xlsx", 0);
-            //isc.poi.Test.Test();
-
-            //Test1();
-        } catch (Exception ex) {
+            workbook = WorkbookFactory.create(file);
+        } catch (Exception e) {
+            // IOException InvalidFormatException
+            result[0] = e.toString();
         }
+
+        if (result[0]==null) {
+            Iterator<Sheet> sheetIterator = workbook.sheetIterator();
+            while(sheetIterator.hasNext()) {
+                CacheListBuilder sheetInfo = new CacheListBuilder("UTF8");
+
+                Sheet sheet = sheetIterator.next();
+                ArrayList<String> rowList = getSheetInternal(sheet);
+                bookList.addAll(rowList);
+
+                try {
+                    sheetInfo.set(rowList.size());
+                    sheetInfo.set(sheet.getSheetName());
+                    bookInfo.set(new String(sheetInfo.getData()));
+                } catch (SQLException e) {
+                    // does not seem to be throwable
+                }
+            }
+            bookList.add(new String(bookInfo.getData()));
+            result = bookList.toArray(new String[bookList.size()]);
+        }
+        return result;
     }
 
     /// Iterators - do not skip empty rows?
     /// https://stackoverflow.com/questions/30519539/apache-poi-skips-rows-that-have-never-been-updated
-    public static String[] getSheet(String filename, int sheetNumber) throws Exception {
+    public static String[] getSheet(String filename, int sheetNumber) {
+        File file = new File(filename);
+
+        Workbook workbook = null;
+        String[] result = new String[1];
+
+        try {
+            workbook = WorkbookFactory.create(file);
+        } catch (Exception e) {
+            // IOException InvalidFormatException
+            result[0] = e.toString();
+        }
+
+        if (result[0]==null) {
+            Sheet sheet = null;
+            try {
+                sheet = workbook.getSheetAt(sheetNumber);
+            } catch (Exception e) {
+                result[0] = e.toString();
+            }
+
+            if (result[0]==null) {
+                ArrayList<String> rowList = getSheetInternal(sheet);
+                result = rowList.toArray(new String[rowList.size()]);
+            }
+        }
+        return result;
+    }
+
+    /// Pass ArrayList here?
+    private static ArrayList<String> getSheetInternal(Sheet sheet) {
 
         String value = null;
         ArrayList<String> rowList = new ArrayList<String>();
-
-        File file = new File(filename);
-        Workbook workbook = WorkbookFactory.create(file);
-
-        Sheet sheet = workbook.getSheetAt(sheetNumber);
         Iterator rows = sheet.rowIterator();
 
         while (rows.hasNext()) {
@@ -56,14 +109,17 @@ public class Main {
                 } else {
                     value = cell.toString();
                 }
-                list.set(value);
-                ///System.out.print("'" + cell.toString() + "'"+" ");
+
+                try {
+                    list.set(value);
+                } catch (SQLException ex){
+                    // does not seem to be throwable
+                }
             }
             rowList.add(new String(list.getData()));
         }
 
-        String[] result = rowList.toArray(new String[rowList.size()]);
-        return result;
+        return rowList;
     }
 
     public static int getSheetCount(String filename) throws Exception {
@@ -72,64 +128,4 @@ public class Main {
         return workbook.getNumberOfSheets();
     }
 
-    public static String[] Test1 () throws Exception{
-        ArrayList<String> list = new ArrayList<String>();
-
-        File file = GetFile();
-        Workbook workbook = WorkbookFactory.create(file);
-        Iterator<Sheet> sheetIterator = workbook.sheetIterator();
-        while(sheetIterator.hasNext()){
-            Sheet sheet = sheetIterator.next();
-            String name  = sheet.getSheetName();
-            String value = null;
-
-            Iterator rows = sheet.rowIterator();
-            while (rows.hasNext()) {
-                Row row = (Row) rows.next();
-
-                for(int i=0; i<row.getLastCellNum(); i++) {
-                    Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                    if (cell.getCellTypeEnum() == FORMULA) {
-                        switch(cell.getCachedFormulaResultTypeEnum()) {
-                            case NUMERIC:
-                                value = String.valueOf(cell.getNumericCellValue());
-                                break;
-                            case STRING:
-                                value = cell.getRichStringCellValue().getString();
-                                break;
-                        }
-                    } else {
-                        value = cell.toString();
-                    }
-                    list.add(value);
-                    ///System.out.print("'" + cell.toString() + "'"+" ");
-                }
-                list.add(ROWSEPARATOR);
-                System.out.println();
-            }
-
-
-            /*for (Row row : sheet) {
-                for (Cell cell : row) {
-                    System.out.print(cell.toString()+" ");
-                    //int i=1;
-                }
-                System.out.println();
-            }*/
-        }
-        String[] result = list.toArray(new String[list.size()]);
-        return result;
-    }
-
-    public static File GetFile () {
-        File file = new File("D:\\Cache\\POI\\Книга1.xlsx");
-
-        return file;
-    }
-    public static Object Test(Object in)
-    {
-        String[] ret = new String[1];
-        ret[0] = "144";
-        return ret;
-    }
 }
