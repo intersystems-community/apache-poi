@@ -1,11 +1,13 @@
 package isc.poi;
 
 import com.intersys.jdbc.CacheListBuilder;
+import org.apache.poi.hssf.usermodel.HSSFDateUtil;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.usermodel.Row;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -87,7 +89,7 @@ public class Main {
     /// Pass ArrayList here?
     private static ArrayList<String> getSheetInternal(Sheet sheet) {
 
-        String value = null;
+        Object value = null;
         ArrayList<String> rowList = new ArrayList<String>();
         Iterator rows = sheet.rowIterator();
 
@@ -96,22 +98,63 @@ public class Main {
             Row row = (Row) rows.next();
 
             for (int i = 0; i < row.getLastCellNum(); i++) {
+                value = "";
                 Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                if (cell.getCellTypeEnum() == FORMULA) {
-                    switch (cell.getCachedFormulaResultTypeEnum()) {
-                        case NUMERIC:
-                            value = String.valueOf(cell.getNumericCellValue());
-                            break;
-                        case STRING:
-                            value = cell.getRichStringCellValue().getString();
-                            break;
-                    }
-                } else {
-                    value = cell.toString();
+                switch (cell.getCellTypeEnum()) {
+                    case FORMULA:
+                        switch (cell.getCachedFormulaResultTypeEnum()) {
+                            case NUMERIC:
+                                if (HSSFDateUtil.isCellDateFormatted(cell)) {
+                                    value = new java.sql.Date(cell.getDateCellValue().getTime());
+                                } else {
+                                    value = cell.getNumericCellValue();
+                                }
+                                break;
+                            case STRING:
+                                value = cell.getRichStringCellValue();
+                                break;
+                        }
+                    case NUMERIC:
+                        if (HSSFDateUtil.isCellDateFormatted(cell)) {
+                            value = new java.sql.Date(cell.getDateCellValue().getTime());
+                        } else {
+                            value = cell.getNumericCellValue();
+                        }
+                        break;
+                    case STRING:
+                        value = cell.getRichStringCellValue().getString();
+                        break;
+                    case _NONE:
+                    case BLANK:
+                    case ERROR:
+                        // not a null
+                        value = "";
+                        break;
+                    case BOOLEAN:
+                        value = cell.getBooleanCellValue();
                 }
 
+
+
                 try {
-                    list.set(value);
+
+                    if (value instanceof String){
+                        // TODO - other solutions for 2byte strings? lines 195-200 contain error
+                        list.set(((String)value).getBytes());
+                    } else if (value instanceof Double) {
+                        Double doubleValue = (double)value;
+                        if ((doubleValue == Math.floor(doubleValue) && !Double.isInfinite(doubleValue))) {
+                            // integer type
+                            list.set(doubleValue.longValue());
+                        } else {
+                            // TODO Set them as numbers.
+                            // BigDouble does not work.
+                            list.set(value.toString());
+                        }
+                    } else {
+                        list.setObject(value);
+                    }
+
                 } catch (SQLException ex){
                     // does not seem to be throwable
                 }
