@@ -6,6 +6,7 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.usermodel.Row;
 
 import java.io.IOException;
+import java.sql.Date;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -13,11 +14,19 @@ import java.io.File;
 
 import static org.apache.poi.ss.usermodel.CellType.*;
 
+import org.apache.poi.hssf.usermodel.HSSFDateUtil;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.RichTextString;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
+
 public class Main {
 
     public static String[] getBook(String filename) {
         File file = new File(filename);
-
         Workbook workbook = null;
         String[] result = new String[1];
         ArrayList<String> bookList = new ArrayList<String>();
@@ -41,7 +50,7 @@ public class Main {
 
                 try {
                     sheetInfo.set(rowList.size());
-                    sheetInfo.set(sheet.getSheetName());
+                    sheetInfo.set(sheet.getSheetName().getBytes());
                     bookInfo.set(new String(sheetInfo.getData()));
                 } catch (SQLException e) {
                     // does not seem to be throwable
@@ -87,7 +96,7 @@ public class Main {
     /// Pass ArrayList here?
     private static ArrayList<String> getSheetInternal(Sheet sheet) {
 
-        String value = null;
+        Object value = null;
         ArrayList<String> rowList = new ArrayList<String>();
         Iterator rows = sheet.rowIterator();
 
@@ -111,9 +120,20 @@ public class Main {
                 }
 
                 try {
-                    list.set(value);
-                } catch (SQLException ex){
-                    // does not seem to be throwable
+                    if (value instanceof String) {
+                        list.set(((String)value).getBytes());
+                    } else if (value instanceof Double) {
+                        Double doubleValue = (Double)value;
+                        if (doubleValue == Math.floor(doubleValue) && !Double.isInfinite(doubleValue)) {
+                            list.set(doubleValue.longValue());
+                        } else {
+                            list.set(value.toString());
+                        }
+                    } else {
+                        list.setObject(value);
+                    }
+                } catch (SQLException e) {
+                    ;
                 }
             }
             rowList.add(new String(list.getData()));
