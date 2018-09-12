@@ -6,6 +6,7 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.usermodel.Row;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.sql.Date;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -101,7 +102,8 @@ public class Main {
         Iterator rows = sheet.rowIterator();
 
         while (rows.hasNext()) {
-            CacheListBuilder list = new CacheListBuilder("UTF8");
+            String list= "";
+            //CacheListBuilder list = new CacheListBuilder(100000, "Cp1251");
             Row row = (Row) rows.next();
 
             for (int i = 0; i < row.getLastCellNum(); i++) {
@@ -119,24 +121,36 @@ public class Main {
                     value = cell.toString();
                 }
 
-                try {
+                //try {
                     if (value instanceof String) {
-                        list.set(((String)value).getBytes());
+                        list += (String)value + (char)1;
+                        /*try {
+                            //byte[] cp1251array = ((String) value).getBytes("Cp1251");
+                            //String str = new String(cp1251array, "cp1251"); // перекодировка CP 1251 -> в String
+                            //byte[] utf8array = str.getBytes("UTF-8"); // перекодировка String -> UTF-8
+                            list.set(((String) value).getBytes("Cp1251"));
+                        } catch (UnsupportedEncodingException e) {
+                            list.set(((String) value).getBytes());
+                        }*/
                     } else if (value instanceof Double) {
                         Double doubleValue = (Double)value;
                         if (doubleValue == Math.floor(doubleValue) && !Double.isInfinite(doubleValue)) {
-                            list.set(doubleValue.longValue());
+                            //list.set(doubleValue.longValue());
+                            list += doubleValue.longValue() + (char)1;
                         } else {
-                            list.set(value.toString());
+                            //list.set(value.toString());
+                            list += value.toString() + (char)1;
                         }
                     } else {
-                        list.setObject(value);
+                        list += value.toString() + (char)1;
+                        //list.setObject(value);
                     }
-                } catch (SQLException e) {
+                //} catch (SQLException e) {
                     ;
-                }
+                //}
             }
-            rowList.add(new String(list.getData()));
+            rowList.add(list.substring(0, list.length() - 1));
+            //rowList.add(new String(list.getData()));
         }
 
         return rowList;
