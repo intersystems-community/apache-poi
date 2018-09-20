@@ -1,21 +1,22 @@
 package isc.poi;
 
 import com.intersys.jdbc.CacheListBuilder;
-import org.apache.poi.hssf.usermodel.HSSFDateUtil;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.usermodel.Row;
 
-import java.io.IOException;
-import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.io.File;
 
-import static org.apache.poi.ss.usermodel.CellType.*;
+import org.apache.poi.hssf.usermodel.HSSFDateUtil;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 
 public class Main {
+
+    private static final char separator = (char)1;
 
     public static String[] getBook(String filename) {
         File file = new File(filename);
@@ -43,7 +44,7 @@ public class Main {
 
                 try {
                     sheetInfo.set(rowList.size());
-                    sheetInfo.set(sheet.getSheetName());
+                    sheetInfo.set(sheet.getSheetName().getBytes());
                     bookInfo.set(new String(sheetInfo.getData()));
                 } catch (SQLException e) {
                     // does not seem to be throwable
@@ -94,7 +95,7 @@ public class Main {
         Iterator rows = sheet.rowIterator();
 
         while (rows.hasNext()) {
-            CacheListBuilder list = new CacheListBuilder("UTF8");
+            String list= "";
             Row row = (Row) rows.next();
 
             for (int i = 0; i < row.getLastCellNum(); i++) {
@@ -135,33 +136,23 @@ public class Main {
                 }
 
 
-
-                try {
-
-                    if (value instanceof String){
-                        // TODO - other solutions for 2byte strings? lines 195-200 contain error
-                        list.set(((String)value).getBytes());
-                    } else if (value instanceof Double) {
-                        Double doubleValue = (double)value;
-                        if ((doubleValue == Math.floor(doubleValue) && !Double.isInfinite(doubleValue))) {
-                            // integer type
-                            list.set(doubleValue.longValue());
-                        } else {
-                            // TODO Set them as numbers.
-                            // BigDouble does not work.
-                            list.set(value.toString());
-                        }
+                if (value instanceof String) {
+                    list += (String)value;
+                } else if (value instanceof Double) {
+                    Double doubleValue = (Double)value;
+                    if (doubleValue == Math.floor(doubleValue) && !Double.isInfinite(doubleValue)) {
+                        list += doubleValue.longValue();
                     } else {
-                        list.setObject(value);
+                        list += value.toString();
                     }
-
-                } catch (SQLException ex){
-                    // does not seem to be throwable
+                } else {
+                    list += value.toString();
                 }
+                list += separator;
             }
-            rowList.add(new String(list.getData()));
+            // remove last separator
+            rowList.add(list.substring(0, list.length() - 1));
         }
-
         return rowList;
     }
 
