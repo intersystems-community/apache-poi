@@ -3,6 +3,7 @@ package isc.poi;
 import com.intersys.jdbc.CacheListBuilder;
 import org.apache.poi.ss.usermodel.Row;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -53,6 +54,12 @@ public class Main {
             bookList.add(new String(bookInfo.getData()));
             result = bookList.toArray(new String[bookList.size()]);
         }
+        try {
+            workbook.close();
+        } catch (IOException e) {
+            result = new String[1];
+            result[0] = e.toString();
+        }
         return result;
     }
 
@@ -82,6 +89,13 @@ public class Main {
             if (result[0]==null) {
                 ArrayList<String> rowList = getSheetInternal(sheet);
                 result = rowList.toArray(new String[rowList.size()]);
+
+                try {
+                    workbook.close();
+                } catch (IOException e) {
+                    result = new String[1];
+                    result[0] = e.toString();
+                }
             }
         }
         return result;
