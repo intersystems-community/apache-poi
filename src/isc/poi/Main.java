@@ -3,11 +3,10 @@ package isc.poi;
 import com.intersys.jdbc.CacheListBuilder;
 import org.apache.poi.ss.usermodel.Row;
 
-import java.io.IOException;
+import java.io.*;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.io.File;
 
 import org.apache.poi.hssf.usermodel.HSSFDateUtil;
 import org.apache.poi.ss.usermodel.Cell;
@@ -19,13 +18,42 @@ public class Main {
 
     private static final char separator = (char)1;
 
-    public static String[] getBook(String filename) {
-        File file = new File(filename);
-
-        Workbook workbook = null;
+    public static String[] getBookFromStream(byte[] stream) {
         String[] result = new String[1];
+
+
         ArrayList<String> bookList = new ArrayList<String>();
         CacheListBuilder bookInfo = new CacheListBuilder("UTF8");
+
+        Workbook workbook = loadBook(new ByteArrayInputStream(stream), result);
+
+        if (result[0]==null) {
+            Iterator<Sheet> sheetIterator = workbook.sheetIterator();
+            while(sheetIterator.hasNext()) {
+                CacheListBuilder sheetInfo = new CacheListBuilder("UTF8");
+
+                Sheet sheet = sheetIterator.next();
+                ArrayList<String> rowList = getSheetInternal(sheet);
+                bookList.addAll(rowList);
+
+                try {
+                    sheetInfo.set(rowList.size());
+                    sheetInfo.set(sheet.getSheetName().getBytes());
+                    bookInfo.set(new String(sheetInfo.getData()));
+                } catch (SQLException e) {
+                    // does not seem to be throwable
+                }
+            }
+            bookList.add(new String(bookInfo.getData()));
+            result = bookList.toArray(new String[bookList.size()]);
+        }
+
+        return result;
+    }
+
+    private static Workbook loadBook(String filename, String[] result) {
+        Workbook workbook = null;
+        File file = new File(filename);
 
         try {
             workbook = WorkbookFactory.create(file);
@@ -33,6 +61,27 @@ public class Main {
             // IOException InvalidFormatException
             result[0] = e.toString();
         }
+
+        return workbook;
+    }
+
+    private static Workbook loadBook(InputStream stream, String[] result) {
+        Workbook workbook = null;
+        try {
+            workbook = WorkbookFactory.create(stream);
+        } catch (Exception e) {
+            // IOException InvalidFormatException
+            result[0] = e.toString();
+        }
+
+        return workbook;
+    }
+
+    public static String[] getBook(String filename) {
+        String[] result = new String[1];
+        ArrayList<String> bookList = new ArrayList<String>();
+        CacheListBuilder bookInfo = new CacheListBuilder("UTF8");
+        Workbook workbook = loadBook(filename, result);
 
         if (result[0]==null) {
             Iterator<Sheet> sheetIterator = workbook.sheetIterator();
