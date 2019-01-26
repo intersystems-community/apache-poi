@@ -1,7 +1,7 @@
 package isc.poi;
 
 import com.intersys.jdbc.CacheListBuilder;
-import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.*;
 
 import java.io.*;
 import java.sql.SQLException;
@@ -9,10 +9,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.apache.poi.hssf.usermodel.HSSFDateUtil;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.usermodel.WorkbookFactory;
 
 public class Main {
 
@@ -177,7 +173,11 @@ public class Main {
                             case STRING:
                                 value = cell.getRichStringCellValue();
                                 break;
+                            case ERROR:
+                                value = "";
+                                break;
                         }
+                        break;
                     case NUMERIC:
                         if (HSSFDateUtil.isCellDateFormatted(cell)) {
                             value = new java.sql.Date(cell.getDateCellValue().getTime());
