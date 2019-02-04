@@ -1,12 +1,18 @@
 package isc.poi;
 
-import com.intersys.jdbc.CacheListBuilder;
 import org.apache.poi.ss.usermodel.*;
 
 import java.io.*;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+
+
 
 import org.apache.poi.hssf.usermodel.HSSFDateUtil;
 
@@ -19,28 +25,22 @@ public class Main {
 
 
         ArrayList<String> bookList = new ArrayList<String>();
-        CacheListBuilder bookInfo = new CacheListBuilder("UTF8");
+        String bookInfo = "";
 
         Workbook workbook = loadBook(new ByteArrayInputStream(stream), result);
 
         if (result[0]==null) {
             Iterator<Sheet> sheetIterator = workbook.sheetIterator();
             while(sheetIterator.hasNext()) {
-                CacheListBuilder sheetInfo = new CacheListBuilder("UTF8");
-
                 Sheet sheet = sheetIterator.next();
                 ArrayList<String> rowList = getSheetInternal(sheet);
                 bookList.addAll(rowList);
 
-                try {
-                    sheetInfo.set(rowList.size());
-                    sheetInfo.set(sheet.getSheetName().getBytes());
-                    bookInfo.set(new String(sheetInfo.getData()));
-                } catch (SQLException e) {
-                    // does not seem to be throwable
-                }
+                bookInfo += String.valueOf(rowList.size()) + (char)1;
+                bookInfo += sheet.getSheetName() + (char)1 + (char)1;
             }
-            bookList.add(new String(bookInfo.getData()));
+            bookInfo = bookInfo.substring(0, bookInfo.length() - 2);
+            bookList.add(bookInfo);
             result = bookList.toArray(new String[bookList.size()]);
         }
 
@@ -76,27 +76,22 @@ public class Main {
     public static String[] getBook(String filename) {
         String[] result = new String[1];
         ArrayList<String> bookList = new ArrayList<String>();
-        CacheListBuilder bookInfo = new CacheListBuilder("UTF8");
+        String bookInfo = "";
         Workbook workbook = loadBook(filename, result);
 
         if (result[0]==null) {
             Iterator<Sheet> sheetIterator = workbook.sheetIterator();
             while(sheetIterator.hasNext()) {
-                CacheListBuilder sheetInfo = new CacheListBuilder("UTF8");
-
                 Sheet sheet = sheetIterator.next();
                 ArrayList<String> rowList = getSheetInternal(sheet);
                 bookList.addAll(rowList);
 
-                try {
-                    sheetInfo.set(rowList.size());
-                    sheetInfo.set(sheet.getSheetName().getBytes());
-                    bookInfo.set(new String(sheetInfo.getData()));
-                } catch (SQLException e) {
-                    // does not seem to be throwable
-                }
+                bookInfo += String.valueOf(rowList.size()) + (char)1;
+                bookInfo += sheet.getSheetName() + (char)1 + (char)1;
             }
-            bookList.add(new String(bookInfo.getData()));
+
+            bookInfo = bookInfo.substring(0, bookInfo.length() - 2);
+            bookList.add(bookInfo);
             result = bookList.toArray(new String[bookList.size()]);
         }
         try {
