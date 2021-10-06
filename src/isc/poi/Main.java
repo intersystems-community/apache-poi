@@ -15,6 +15,7 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 
 
 import org.apache.poi.hssf.usermodel.HSSFDateUtil;
+import org.apache.poi.ss.util.CellReference;
 
 public class Main {
 
@@ -218,6 +219,47 @@ public class Main {
         File file = new File(filename);
         Workbook workbook = WorkbookFactory.create(file);
         return workbook.getNumberOfSheets();
+    }
+
+    public static String fillBook(String filename, String outFilename,  int sheetNumber, String[] params){
+        String result = "";
+        try {
+            File file = new File(filename);
+
+            Workbook workbook = null;
+            workbook = WorkbookFactory.create(file);
+            Sheet sheet = workbook.getSheetAt(sheetNumber);
+            for (String param: params)
+            {
+                String[] paramArray = param.split("\u0001");
+                String address = paramArray[0];
+                String value = paramArray[1];
+
+                CellReference cellReference = new CellReference(address);
+                Row row = sheet.getRow(cellReference.getRow());
+
+                if (row == null) {
+                    row = sheet.createRow(cellReference.getRow());
+                }
+
+                Cell cell = row.getCell(cellReference.getCol(), Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                cell.setCellValue(value);
+            }
+
+            FileOutputStream out = new FileOutputStream(outFilename);
+            workbook.write(out);
+            out.close();
+
+        } catch (Exception e) {
+            StringWriter sw = new StringWriter();
+            e.printStackTrace(new PrintWriter(sw));
+            String exceptionAsString = sw.toString();
+
+            result = e.toString() + " " + exceptionAsString;
+        }
+        //File file = new File(filename);
+        //Workbook workbook = WorkbookFactory.create(file);
+        return result;
     }
 
 }
