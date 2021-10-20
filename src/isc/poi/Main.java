@@ -233,8 +233,15 @@ public class Main {
             {
                 String[] paramArray = param.split("\u0001");
                 String address = paramArray[0];
-                String value = paramArray[1];
+                String value;
 
+                if (paramArray.length > 1)
+                {
+                    value = paramArray[1];
+                } else {
+                    value = "";
+                }
+                
                 CellReference cellReference = new CellReference(address);
                 Row row = sheet.getRow(cellReference.getRow());
 
