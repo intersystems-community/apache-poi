@@ -250,7 +250,21 @@ public class Main {
                 }
 
                 Cell cell = row.getCell(cellReference.getCol(), Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                cell.setCellValue(value);
+                
+                if (value.matches("\\d+(\\.\\d+)?"))
+                {
+                    cell.setCellType(CellType.NUMERIC);
+                    cell.setCellValue(Double.parseDouble(value));
+                }else
+                {
+                    cell.setCellType(CellType.STRING);
+                    cell.setCellValue(value);
+                }
+            }
+
+            //workbook.getCreationHelper().createFormulaEvaluator().evaluateAll();
+            workbook.setForceFormulaRecalculation(true);
+            
             }
 
             FileOutputStream out = new FileOutputStream(outFilename);
