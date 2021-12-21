@@ -233,8 +233,15 @@ public class Main {
             {
                 String[] paramArray = param.split("\u0001");
                 String address = paramArray[0];
-                String value = paramArray[1];
+                String value;
 
+                if (paramArray.length > 1)
+                {
+                    value = paramArray[1];
+                } else {
+                    value = "";
+                }
+                
                 CellReference cellReference = new CellReference(address);
                 Row row = sheet.getRow(cellReference.getRow());
 
@@ -243,7 +250,21 @@ public class Main {
                 }
 
                 Cell cell = row.getCell(cellReference.getCol(), Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                cell.setCellValue(value);
+                
+                if (value.matches("\\d+(\\.\\d+)?"))
+                {
+                    cell.setCellType(CellType.NUMERIC);
+                    cell.setCellValue(Double.parseDouble(value));
+                }else
+                {
+                    cell.setCellType(CellType.STRING);
+                    cell.setCellValue(value);
+                }
+            }
+
+            //workbook.getCreationHelper().createFormulaEvaluator().evaluateAll();
+            workbook.setForceFormulaRecalculation(true);
+            
             }
 
             FileOutputStream out = new FileOutputStream(outFilename);
