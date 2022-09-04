@@ -14,8 +14,11 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 
 
 
-import org.apache.poi.hssf.usermodel.HSSFDateUtil;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.util.CellReference;
+
+
+import static org.apache.poi.ss.usermodel.CellType.*;
 
 public class Main {
 
@@ -148,19 +151,21 @@ public class Main {
         Object value = null;
         ArrayList<String> rowList = new ArrayList<String>();
         Iterator rows = sheet.rowIterator();
+        int rownum=0;
 
         while (rows.hasNext()) {
+            rownum++;
             String list= "";
             Row row = (Row) rows.next();
 
             for (int i = 0; i < row.getLastCellNum(); i++) {
                 value = "";
                 Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                switch (cell.getCellTypeEnum()) {
+                switch (cell.getCellType()) {
                     case FORMULA:
-                        switch (cell.getCachedFormulaResultTypeEnum()) {
+                        switch (cell.getCachedFormulaResultType()) {
                             case NUMERIC:
-                                if (HSSFDateUtil.isCellDateFormatted(cell)) {
+                                if (DateUtil.isCellDateFormatted(cell)) {
                                     value = new java.sql.Date(cell.getDateCellValue().getTime());
                                 } else {
                                     value = cell.getNumericCellValue();
@@ -175,7 +180,7 @@ public class Main {
                         }
                         break;
                     case NUMERIC:
-                        if (HSSFDateUtil.isCellDateFormatted(cell)) {
+                        if (DateUtil.isCellDateFormatted(cell)) {
                             value = new java.sql.Date(cell.getDateCellValue().getTime());
                         } else {
                             value = cell.getNumericCellValue();
@@ -208,9 +213,16 @@ public class Main {
                     list += value.toString();
                 }
                 list += separator;
+                cell = null;
+                value = null;
             }
             // remove last separator
             rowList.add(list.substring(0, list.length() - 1));
+
+            row = null;
+            if (rownum % 1000 == 0) {
+                System.gc();
+            }
         }
         return rowList;
     }
@@ -221,12 +233,12 @@ public class Main {
         return workbook.getNumberOfSheets();
     }
 
-    public static String fillBook(String filename, String outFilename,  int sheetNumber, String[] params){
+    public static String fillBook(String filename, String outFilename,  int sheetNumber, String[] params) throws IOException {
         String result = "";
+        Workbook workbook = null;
         try {
             File file = new File(filename);
 
-            Workbook workbook = null;
             workbook = WorkbookFactory.create(file);
             Sheet sheet = workbook.getSheetAt(sheetNumber);
             for (String param: params)
@@ -265,11 +277,10 @@ public class Main {
             //workbook.getCreationHelper().createFormulaEvaluator().evaluateAll();
             workbook.setForceFormulaRecalculation(true);
             
-            }
 
-            FileOutputStream out = new FileOutputStream(outFilename);
-            workbook.write(out);
-            out.close();
+        FileOutputStream out = new FileOutputStream(outFilename);
+        workbook.write(out);
+        out.close();
 
         } catch (Exception e) {
             StringWriter sw = new StringWriter();
